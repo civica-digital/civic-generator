@@ -1,0 +1,33 @@
+FROM ruby:2.4.2-alpine
+
+# Runtime
+ENV HOME=/usr/src/app \
+    LANG=C.UTF-8 \
+    PAGER='busybox less' \
+    PATH=/usr/src/app/bin:$PATH \
+    TERM='xterm-256color' \
+    RAILS_ENV=development
+
+WORKDIR $HOME
+
+EXPOSE 3000
+
+CMD rm -f tmp/pids/server.pid && rails server -b 0.0.0.0
+
+STOPSIGNAL SIGKILL
+
+RUN set -ex \
+    && apk update \
+    && apk upgrade \
+    && apk add --no-cache --virtual .runtime \
+      tzdata \
+      postgresql-dev \
+      bash \
+      nodejs
+
+# Build
+RUN set -ex \
+    && apk add --no-cache --virtual .build \
+      ruby-dev \
+      build-base \
+      git

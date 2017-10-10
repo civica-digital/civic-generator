@@ -1,0 +1,21 @@
+default: &default
+  adapter: postgresql
+  pool: 5
+  timeout: 5000
+  host: <%= ENV.fetch('DATABASE_HOST') { 'localhost' } %>
+  username: <%= ENV.fetch('DATABASE_USERNAME') { `whoami` } %>
+  password: <%= ENV.fetch('DATABASE_PASSWORD') { '' } %>
+
+development:
+  <<: *default
+  database: {{project_name}}_development
+
+test:
+  <<: *default
+  database: {{project_name}}_test
+
+production:
+  adapter: postgresql
+  pool: 5
+  timeout: 5000
+  database_url: <%= ENV.fetch('DATABASE_URL') { '' } %>

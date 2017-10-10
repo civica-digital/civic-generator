@@ -1,0 +1,37 @@
+# vi:syntax=yaml
+---
+### Generic smell configuration
+
+# We don't care if you don't comment your code
+IrresponsibleModule:
+  enabled: false
+
+### Rails
+"app/controllers":
+  NestedIterators:
+    max_allowed_nesting: 2
+  UnusedPrivateMethod:
+    enabled: false
+  InstanceVariableAssumption:
+    enabled: false
+  TooManyStatements:
+    max_statements: 8
+
+"app/helpers":
+  UtilityFunction:
+    enabled: false
+
+"app/mailers":
+  InstanceVariableAssumption:
+    enabled: false
+
+"app/models":
+  IrresponsibleModule:
+    enabled: true
+    exclude:
+    - 'ApplicationRecord'
+
+exclude_paths:
+  - db/migrate
+  - app/dashboards
+  - app/fields

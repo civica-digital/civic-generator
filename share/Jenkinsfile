@@ -1,0 +1,46 @@
+pipeline {
+  agent any
+  environment {
+    CI = "true"
+    DEPLOY_ENV = "staging"
+    REPOSITORY = "472554934874.dkr.ecr.us-east-1.amazonaws.com/{{project_name}}"
+    TAG = "v_${env.BUILD_NUMBER}"
+    HOST = "deploy@{{project_name}}.civicadesarrolla.me"
+    COMPOSE_PROJECT_NAME = "{{project_name}}"
+  }
+  stages {
+    stage('Bundle') {
+      steps {
+        sh 'make bundle'
+      }
+    }
+    stage('Prepare') {
+      steps {
+        sh 'make prepare'
+      }
+    }
+    stage('Test') {
+      steps {
+        sh 'make test'
+      }
+    }
+    stage('Analyze') {
+      steps {
+        sh 'make analyze'
+      }
+    }
+    stage('Deploy') {
+      when {
+        branch 'master'
+      }
+      steps {
+        sh 'make deploy'
+      }
+    }
+    stage('Clean') {
+      steps {
+        sh 'make clean'
+      }
+    }
+  }
+}

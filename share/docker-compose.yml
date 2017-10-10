@@ -1,0 +1,27 @@
+version: '3'
+
+volumes:
+  db_data: {}
+  gems: {}
+
+services:
+  db:
+    image: postgres:9.6
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  web: &web
+    image: civica-digital/{{project_name}}:development
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    depends_on:
+      - db
+    volumes:
+      - .:/usr/src/app
+      - gems:/usr/local/bundle
+    environment:
+      - DATABASE_HOST=db
+      - DATABASE_PASSWORD=
+      - DATABASE_USERNAME=postgres
+      - REDIS_URL=redis://redis:6379
