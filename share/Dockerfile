@@ -37,7 +37,8 @@ RUN set -ex \
 
 COPY . $APP_HOME
 
-RUN rake assets:precompile
+RUN SECRET_KEY_BASE=tmp \
+    rake assets:precompile
 
 RUN chown -R nobody:nogroup $APP_HOME
 USER nobody
