@@ -3,7 +3,6 @@ FROM ruby:2.4.2-alpine
 # Runtime
 ENV HOME=/usr/src/app \
     LANG=C.UTF-8 \
-    PAGER='busybox less' \
     PATH=/usr/src/app/bin:$PATH \
     TERM='xterm-256color' \
     RAILS_ENV=development
@@ -23,6 +22,7 @@ RUN set -ex \
       tzdata \
       postgresql-dev \
       bash \
+      less \
       nodejs
 
 # Build
