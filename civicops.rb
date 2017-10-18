@@ -94,6 +94,29 @@ def devops_stack
   download '.gitignore'
   download 'Makefile'
 
+  timber_config_development = <<~CONFIG
+    # Install the Timber.io logger, but do not send logs.
+    logger = Timber::Logger.new(nil)
+    logger.level = config.log_level
+    config.logger = ActiveSupport::TaggedLogging.new(logger)
+  CONFIG
+
+  timber_config_production = <<~CONFIG
+    # Install the Timber.io logger, send logs over HTTP or STDOUT
+    if ENV['TIMBER_API_KEY'].present?
+      log_device = Timber::LogDevices::HTTP.new(ENV['TIMBER_API_KEY'])
+    else
+      log_devise = STDOUT
+    end
+
+    logger = Timber::Logger.new(log_device)
+    logger.level = config.log_level
+    config.logger = ActiveSupport::TaggedLogging.new(logger)
+  CONFIG
+
+  environment timber_config_development, env: 'development'
+  environment timber_config_production, env: 'production'
+
   docker
   jenkins
   terraform
@@ -246,9 +269,12 @@ def setup_aws_ses
 
   CONFIG
 
+  mailer_config = "  config.mailer_sender = ENV.fetch('EMAIL_FROM') { 'noreply@civica.digital' }"
+
   download 'config/initializers/mailer.rb'
   environment 'config.action_mailer.delivery_method = :ses', env: 'production'
   insert_into_file 'deploy/staging/main.tf', ses_policy, before: '# Data'
+  insert_into_file 'config/initializers/devise.rb', mailer_config, before: '  # ==> ORM configuration'
 end
 
 def setup_recaptcha
