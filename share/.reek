@@ -6,6 +6,9 @@
 IrresponsibleModule:
   enabled: false
 
+NilCheck:
+  enabled: false
+
 ### Rails
 "app/controllers":
   NestedIterators:
