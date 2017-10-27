@@ -24,11 +24,6 @@ pipeline {
         sh 'make test'
       }
     }
-    stage('Analyze') {
-      steps {
-        sh 'make analyze'
-      }
-    }
     stage('Deploy') {
       when {
         branch 'master'
@@ -41,6 +36,11 @@ pipeline {
       steps {
         sh 'make clean'
       }
+    }
+  }
+  post {
+    always {
+      deleteDir()
     }
   }
 }
