@@ -18,6 +18,8 @@ def main
   setup_recaptcha     if yes?('> Setup reCAPTCHA?', :green)
 
   clean_gemfile
+
+  finish_message
 end
 
 def welcome_message
@@ -120,6 +122,7 @@ def devops_stack
   docker
   jenkins
   terraform
+  configure_git_crypt
 end
 
 def code_analysis_stack
@@ -326,6 +329,47 @@ def download(file, &block)
   render.gsub!('{{project_name}}', @app_name)
 
   create_file file, render
+end
+
+def configure_git_crypt
+  say 'Configuring git-crypt...', :yellow
+
+  team_members = %w(
+    abisosa
+    fercreek
+    mikesaurio
+    mroutis
+    rafaelcr
+    ricalanis
+  )
+
+  `git-crypt init`
+  team_members.each { |user| `keybase pgp pull #{user}` }
+  team_members.each { |user| `git-crypt add-gpg-user --trusted #{user}` }
+
+  gitattributes = <<~CONF
+    secretfile filter=git-crypt diff=git-crypt
+    .env filter=git-crypt diff=git-crypt
+    *.secret
+  CONF
+
+  create_file '.gitattributes', gitattributes
+end
+
+def finish_message
+  message = <<~MESSAGE
+
+    ===========================================
+
+    Awesome!
+
+    Setup your local development environment
+    with Docker using the command: `make dev`
+
+    ===========================================
+  MESSAGE
+
+  say message, :blue
 end
 
 main

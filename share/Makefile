@@ -1,6 +1,21 @@
-.PHONY: dev ci bundle prepare test analyze deploy build push provide clean help
+# Rules
+.DEFAULT_GOAL := help
 
-dev: docker-compose.override.yml bundle prepare ## Setup your Docker development environment
+.PHONY: dev ci \
+	bundle prepare test \
+	analyze deploy build \
+	push provide clean help
+
+# Variables
+DEPLOY_ENV    := staging
+HOST          := localhost
+REPOSITORY    := civica-digital/$(shell basename $(shell pwd))
+TAG           := latest
+WORKSPACE     := .
+IMAGE         := $(REPOSITORY):$(TAG)
+
+# Targets
+dev: files bundle prepare ## Setup your Docker development environment
 	@docker images --filter 'dangling=true' -q \
 		| xargs docker rmi -f 2> /dev/null; true
 	docker-compose up -d
@@ -13,7 +28,7 @@ bundle: ## Rebuild the image and install the gems
 	docker-compose run --rm --no-deps web bundle install
 
 prepare: tmp log ## Prepare the test environment and run migrations
-	docker-compose run --rm web rake db:create test:prepare db:migrate
+	docker-compose run --rm web rake db:create test:prepare db:migrate db:seed
 
 test: ## Run the test suite
 	docker-compose run --rm -e RAILS_ENV=test web rake spec
@@ -27,7 +42,6 @@ analyze: ## Run the static analysis suite
 
 deploy: build push provide ## Run the deploy strategy (build, push, provide)
 
-IMAGE := $(REPOSITORY):$(TAG)
 build: ## Build the staging/production Docker image
 	docker build \
 		--tag $(IMAGE) \
@@ -51,6 +65,13 @@ clean: ## Remove dangling images
 	@docker rmi -f $(IMAGE); true
 	@docker images --filter 'dangling=true' -q | xargs docker rmi -f; true
 
+decrypt: ## Unlock the secrets using your GPG key
+	@git-crypt unlock
+
+files: docker-compose.override.yml ## Creates tmp/ and log/
+	mkdir -p tmp
+	mkdir -p log
+
 docker-compose.override.yml:
 	@echo "version: '3'"      >> docker-compose.override.yml
 	@echo "services:"         >> docker-compose.override.yml
@@ -64,13 +85,7 @@ ifeq ($(shell uname), Linux)
 	@echo "    user: $(shell id -u):$(shell id -g)" >> docker-compose.override.yml
 endif
 
-tmp:
-	mkdir -p tmp
-
-log:
-	mkdir -p log
-
 help:
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
-
-.DEFAULT_GOAL := help
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
+		| sort \
+		| awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
