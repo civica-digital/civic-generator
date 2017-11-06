@@ -4,7 +4,9 @@
 # configuration, documenting (infrastructure as code) the tasks
 # that we normaly use in our staging/production environments.
 #
-# It should be runned as root, as many commands requires root access.
+# It should be runned with a user with `sudo` powers, that doesn't require
+# password for it, as many commands requires root access and runs in
+# a non-interactive environment.
 
 username=${USERNAME}
 aws_ecr_access_key=${AWS_ECR_ACCESS_KEY}

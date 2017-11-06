@@ -1,9 +1,11 @@
 require 'open-uri'
+require 'securerandom'
 
 @app_name = app_name.gsub('_', '-')
 
 def main
   welcome_message
+  set_environment_variables
   configure_postgres
   configure_timezone
 
@@ -44,6 +46,21 @@ def welcome_message
   say message, :blue
 end
 
+def set_environment_variables
+  say 'Setting default environment variables...', :yellow
+
+  environment_variables = <<~CONFIG
+    AWS_ACCESS_KEY=changeme
+    AWS_REGION=us-east-1
+    AWS_SECRET_KEY=changeme
+    RAILS_LOG_TO_STDOUT=true
+    RAILS_SERVE_STATIC_FILES=true
+    SECRET_KEY_BASE=#{SecureRandom.hex(64)}
+  CONFIG
+
+  create_file 'deploy/staging/provisions/.env', environment_variables
+end
+
 def clean_gemfile
   say 'Cleaning the Gemfile...', :yellow
 
@@ -58,8 +75,13 @@ def configure_postgres
   gsub_file('Gemfile', /sqlite3/, 'pg') # Use PostgreSQL instead of SQLite
   gem 'pg'
 
+  environment_variables = <<~CONFIG
+    DATABASE_URL=postgresql://postgres@db/#{@app_name}_production
+  CONFIG
+
   remove_file 'config/database.yml.example'
   download 'config/database.yml'
+  append_to_file 'deploy/staging/provisions/.env', environment_variables
 end
 
 def configure_timezone
@@ -116,8 +138,17 @@ def devops_stack
     config.logger = ActiveSupport::TaggedLogging.new(logger)
   CONFIG
 
+  environment_variables = <<~CONFIG
+    NEW_RELIC_ENV=staging
+    NEW_RELIC_LICENSE_KEY=changeme
+    ROLLBAR_ACCESS_TOKEN=changeme
+    ROLLBAR_ENV=staging
+    TIMBER_API_KEY=changeme
+  CONFIG
+
   environment timber_config_development, env: 'development'
   environment timber_config_production, env: 'production'
+  append_to_file 'deploy/staging/provisions/.env', environment_variables
 
   docker
   jenkins
@@ -179,13 +210,13 @@ end
 
 def terraform
   say 'Adding scripts to setup the server...', :yellow
-  download 'deploy/scripts/setup-server.sh'
-  download 'deploy/scripts/update-container.sh'
+  download 'deploy/staging/scripts/setup-server.sh'
+  download 'deploy/staging/scripts/update-container.sh'
 
   say 'Configuring Terraform to deploy a staging environment...', :yellow
-  download 'deploy/staging/docker-compose.yml'
+  download 'deploy/staging/provisions/docker-compose.yml'
   download 'deploy/staging/main.tf'
-  download 'deploy/staging/traefik.toml'
+  download 'deploy/staging/provisions/traefik.toml'
 end
 
 def file_upload_to_aws
@@ -241,10 +272,15 @@ def file_upload_to_aws
     }
   CONFIG
 
+  environment_variables = <<~CONFIG
+    AWS_S3_BUCKET=changeme
+  CONFIG
+
   download 'config/initializers/carrierwave.rb'
   insert_into_file 'deploy/staging/main.tf', aws_bucket_config, before: '# Data'
   insert_into_file 'deploy/staging/main.tf', aws_s3_user, before: '# Data'
   append_to_file 'deploy/staging/main.tf', bucket_output
+  append_to_file 'deploy/staging/provisions/.env', environment_variables
 end
 
 def setup_aws_ses
@@ -272,12 +308,19 @@ def setup_aws_ses
 
   CONFIG
 
+  environment_variables = <<~CONFIG
+    AWS_SES_ACCESS_KEY=changeme
+    AWS_SES_EMAIL_FROM=noreply+#{@app_name}@civica.digital
+    AWS_SES_SECRET_KEY=changeme
+  CONFIG
+
   mailer_config = "  config.mailer_sender = ENV.fetch('EMAIL_FROM') { 'noreply@civica.digital' }"
 
   download 'config/initializers/mailer.rb'
   environment 'config.action_mailer.delivery_method = :ses', env: 'production'
   insert_into_file 'deploy/staging/main.tf', ses_policy, before: '# Data'
   insert_into_file 'config/initializers/devise.rb', mailer_config, before: '  # ==> ORM configuration'
+  append_to_file 'deploy/staging/provisions/.env', environment_variables
 end
 
 def setup_recaptcha
@@ -316,9 +359,9 @@ YML
   insert_into_file 'docker-compose.yml', redis_service, after: 'services:'
   append_to_file 'docker-compose.yml', sidekiq_service
 
-  insert_into_file 'deploy/staging/docker-compose.yml', redis_volume, after: db_volume
-  insert_into_file 'deploy/staging/docker-compose.yml', redis_service, after: 'services:'
-  append_to_file 'deploy/staging/docker-compose.yml', sidekiq_service
+  insert_into_file 'deploy/staging/provisions/docker-compose.yml', redis_volume, after: db_volume
+  insert_into_file 'deploy/staging/provisions/docker-compose.yml', redis_service, after: 'services:'
+  append_to_file 'deploy/staging/provisions/docker-compose.yml', sidekiq_service
 end
 
 def download(file, &block)

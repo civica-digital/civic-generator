@@ -4,7 +4,8 @@
 .PHONY: dev ci \
 	bundle prepare test \
 	analyze deploy build \
-	push provide clean help
+	push provide update \
+	clean help
 
 # Variables
 DEPLOY_ENV    := staging
@@ -40,7 +41,7 @@ analyze: ## Run the static analysis suite
 	docker-compose run --rm --no-deps -e CI=true web brakeman --no-progress -q -w3 -z
 	docker-compose run --rm --no-deps -e HOME=/tmp web bundle-audit check --update --ignore CVE-2017-5029
 
-deploy: build push provide ## Run the deploy strategy (build, push, provide)
+deploy: build push provide update ## Run the deploy strategy (build, push, provide, update)
 
 build: ## Build the staging/production Docker image
 	docker build \
@@ -56,9 +57,12 @@ push: ## Push the Docker image to the registry
 	@$(shell aws --profile docker ecr get-login --no-include-email)
 	docker push $(IMAGE)
 
-provide: ## Provide the HOST with the Docker image
+provide: ## Provide the HOST with the provisions/
+	scp -r deploy/$(DEPLOY_ENV)/provisions $(HOST):/var/www/{{project_name}}
+
+update: ## Update the HOST containers with the given Docker IMAGE
 	ssh -o StrictHostKeyChecking=no \
-		$(HOST) bash -l -s < deploy/scripts/update-container.sh $(IMAGE)
+		$(HOST) bash -l -s < deploy/$(DEPLOY_ENV)/scripts/update-container.sh $(IMAGE)
 
 clean: ## Remove dangling images
 	@docker-compose down

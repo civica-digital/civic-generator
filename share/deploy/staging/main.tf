@@ -67,7 +67,7 @@ resource "aws_ecr_repository" "repo" {
 
 # Data
 data "template_file" "setup_server" {
-  template = "${file("../scripts/setup-server.sh")}"
+  template = "${file("./scripts/setup-server.sh")}"
 
   vars {
     PROJECT_NAME       = "${var.project_name}"
