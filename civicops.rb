@@ -388,7 +388,7 @@ def configure_git_crypt
 
   `git-crypt init`
   team_members.each { |user| `curl https://keybase.io/#{user}/pgp_keys.asc | gpg --import` }
-  team_members.each { |user| `git-crypt add-gpg-user --trusted #{user}` }
+  team_members.each { |user| `git-crypt add-gpg-user --trusted #{user[0..2]}` }
 
   gitattributes = <<~CONF
     secretfile filter=git-crypt diff=git-crypt
