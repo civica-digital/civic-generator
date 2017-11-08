@@ -387,7 +387,7 @@ def configure_git_crypt
   )
 
   `git-crypt init`
-  team_members.each { |user| `keybase pgp pull #{user}` }
+  team_members.each { |user| `curl https://keybase.io/#{user}/pgp_keys.asc | gpg --import` }
   team_members.each { |user| `git-crypt add-gpg-user --trusted #{user}` }
 
   gitattributes = <<~CONF

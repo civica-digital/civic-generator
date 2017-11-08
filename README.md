@@ -3,12 +3,12 @@
 
 ## How to use it?
 You need to have the following dependencies installed:
-- [Keybase](https://keybase.io/download)
-- [git-crypt](https://github.com/AGWA/git-crypt/blob/master/INSTALL.md)
 - NodeJS
 - Rails
 - PostgreSQL
 - Git
+- [GPG tools](https://gpgtools.org/)
+- [git-crypt](https://github.com/AGWA/git-crypt/blob/master/INSTALL.md)
 
 ```bash
 # Create

@@ -15,13 +15,6 @@ RUN set -ex \
       nodejs \
       git
 
-# Keybase
-RUN set -x \
-    && curl -O https://prerelease.keybase.io/keybase_amd64.deb \
-    && dpkg -i keybase_amd64.deb; true \
-    && apt-get install -y -f \
-    && rm -f keybase_amd64.deb
-
 # Git Crypt
 RUN set -x \
     && git clone https://github.com/AGWA/git-crypt.git \
