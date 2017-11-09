@@ -226,7 +226,7 @@ def file_upload_to_aws
   aws_bucket_config = <<~CONFIG
     # Create AWS S3 bucket
     resource "aws_s3_bucket" "storage" {
-      bucket = "${var.project_name}"
+      bucket = "${var.project_name}-file-storage"
       acl    = "private"
 
       tags {
