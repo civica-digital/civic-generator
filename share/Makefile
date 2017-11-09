@@ -2,6 +2,7 @@
 .DEFAULT_GOAL := help
 
 .PHONY: dev ci \
+	log up down \
 	bundle prepare test \
 	analyze deploy build \
 	push provide update \
@@ -68,6 +69,15 @@ clean: ## Remove dangling images
 	@docker-compose down
 	@docker rmi -f $(IMAGE); true
 	@docker images --filter 'dangling=true' -q | xargs docker rmi -f; true
+
+up: ## Start the containers with docker-compose in background
+	@docker-compose up -d
+
+down: ## Remove the containers in background
+	@docker-compose down
+
+log: ## See the logs of the application container
+	@docker-compose logs -f web
 
 decrypt: ## Unlock the secrets using your GPG key
 	@git-crypt unlock
