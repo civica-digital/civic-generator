@@ -26,7 +26,7 @@ ci: bundle prepare test analyze ## Run the CI strategy (prepare, test, analyze)
 
 bundle: ## Rebuild the image and install the gems
 	docker-compose build web
-	@docker-compose down 2> /dev/null; true
+	@docker-compose down --remove-orphans 2> /dev/null; true
 	docker-compose run --rm --no-deps web bundle install
 
 prepare: tmp log ## Prepare the test environment and run migrations
@@ -66,7 +66,7 @@ update: ## Update the HOST containers with the given Docker IMAGE
 		$(HOST) bash -l -s < deploy/$(DEPLOY_ENV)/scripts/update-container.sh $(IMAGE)
 
 clean: ## Remove dangling images
-	@docker-compose down
+	@docker-compose down --remove-orphans
 	@docker rmi -f $(IMAGE); true
 	@docker images --filter 'dangling=true' -q | xargs docker rmi -f; true
 
@@ -74,7 +74,7 @@ up: ## Start the containers with docker-compose in background
 	@docker-compose up -d
 
 down: ## Remove the containers in background
-	@docker-compose down
+	@docker-compose down --remove-orphans
 
 log: ## See the logs of the application container
 	@docker-compose logs -f web
