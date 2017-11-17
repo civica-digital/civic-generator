@@ -1,4 +1,4 @@
-# Use the motheds inside FactoryGirl without the namespace
+# Use the methods inside FactoryGirl without the namespace
 #   FactoryGirl.create(:factory) -> create(:factory)
 
 RSpec.configure do |config|
