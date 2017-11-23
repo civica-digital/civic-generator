@@ -1,44 +1,44 @@
 # Rails
-.bundle/
-vendor/bundle
+/.bundle/
+/.gem/
+/vendor/bundle/
 
 # Logfiles and tempfiles
-log/*
-tmp/*
-shared/
+/log/*
+/tmp/*
+/shared/
 
 # Web
-node_modules/
-public/assets
-yarn-error.log
+/node_modules/
+/public/assets/
+/yarn-error.log
 
 # Development
 *DS_Store
-.bash_history
-.byebug_history
-.envrc
-.local
-.powenv
-.pry_history
-.pryrc
-.rvmrc
-Session.vim
-storage/*
+/.bash_history
+/.byebug_history
+/.envrc
+/.local
+/.powenv
+/.pry_history
+/.pryrc
+/.rvmrc
+/storage/*
 
 # Secrets
 .env
-config/application.yml
+/config/application.yml
 
 # Rubocop
 .cache
 
 # Tests
-coverage/
-spec/reports/
+/coverage/
+/spec/reports/
 
 # Docker
-docker-compose.override.yml
+/docker-compose.override.yml
 
 # Deploy
-deploy/**/.terraform/*
-deploy/**/terraform*
+/deploy/**/.terraform/*
+/deploy/**/terraform*
