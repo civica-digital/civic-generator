@@ -1,7 +1,6 @@
 # Carrierwave configuration for S3 using the `fog-aws` gem
-
 CarrierWave.configure do |config|
-  if Rails.env.production? || ENV.key?('AWS_SECRET_KEY')
+  if Rails.env.production? && ENV.key?('AWS_SECRET_KEY')
     config.fog_provider = 'fog/aws'
     config.fog_credentials = {
       provider:              'AWS',
@@ -30,4 +29,4 @@ CarrierWave.configure do |config|
     config.fog_public = false
     config.fog_attributes = { 'Cache-Control' => "max-age=#{365.days.to_i}" }
   end
-end if defined?(Rails::Server)
+end
