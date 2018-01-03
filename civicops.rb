@@ -10,7 +10,6 @@ def main
   configure_timezone
   configure_github
 
-  authentication      if yes?('> Authentication (Devise)?', :green)
   web_stack           if yes?('> Web stack?', :green)
   devops_stack        if yes?('> DevOps stack?', :green)
   code_analysis_stack if yes?('> Code analysis stack?', :green)
@@ -109,15 +108,6 @@ def web_stack
   gem_group :development do
     gem 'better_errors'
   end
-end
-
-def authentication
-  gem 'devise'
-  run 'bundle install'
-  generate 'devise:install'
-  model_name = ask('What would you like the user model to be called? [user]')
-  model_name = 'user' if model_name.blank?
-  generate 'devise', model_name
 end
 
 def devops_stack
