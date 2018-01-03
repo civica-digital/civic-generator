@@ -11,10 +11,10 @@ def main
   configure_github
 
   web_stack           if yes?('> Web stack?', :green)
+  authentication      if yes?('> Authentication (Devise)?', :green)
   devops_stack        if yes?('> DevOps stack?', :green)
   code_analysis_stack if yes?('> Code analysis stack?', :green)
   tests_stack         if yes?('> Tests stack?', :green)
-
   setup_sidekiq       if yes?('> Configure Sidekiq + Redis?', :green)
   file_upload_to_aws  if yes?('> Carrierwave + AWS S3?', :green)
   setup_aws_ses       if yes?('> Send mail with AWS SES?', :green)
@@ -109,6 +109,14 @@ def web_stack
   gem_group :development do
     gem 'better_errors'
   end
+end
+
+def authentication
+  gem 'devise'
+  generate 'devise:install'
+  model_name = ask('What would you like the user model to be called? [user]')
+  model_name = 'user' if model_name.blank?
+  generate 'devise', model_name
 end
 
 def devops_stack
