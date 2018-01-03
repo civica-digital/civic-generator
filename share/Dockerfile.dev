@@ -1,9 +1,9 @@
 FROM ruby:2.4.2-alpine
 
 # Runtime
-ENV HOME=/usr/src/app \
+ENV HOME=/usr/src \
     LANG=C.UTF-8 \
-    PATH=/usr/src/app/bin:$PATH \
+    PATH=/usr/src/bin:$PATH \
     TERM='xterm-256color' \
     RAILS_ENV=development
 
@@ -19,11 +19,12 @@ RUN set -ex \
     && apk update \
     && apk upgrade \
     && apk add --no-cache --virtual .runtime \
-      tzdata \
-      postgresql-dev \
       bash \
+      imagemagick \
       less \
-      nodejs
+      nodejs \
+      postgresql-dev \
+      tzdata
 
 # Build
 RUN set -ex \
@@ -31,3 +32,5 @@ RUN set -ex \
       ruby-dev \
       build-base \
       git
+
+# vim: ft=dockerfile

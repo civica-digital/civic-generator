@@ -14,7 +14,7 @@ main() {
 }
 
 login_to_aws() {
-  $(AWS_DEFAULT_REGION=us-east-1 aws --profile docker ecr get-login --no-include-email)
+  $(aws ecr get-login --no-include-email)
 }
 
 download_image() {
@@ -28,7 +28,7 @@ update_compose_file() {
 recreate_services() {
   old_container=$(docker ps --filter name=web -q | head -n 1)
   docker-compose up -d --no-recreate --scale web=2
-  sleep 5;
+  sleep 3;
   docker stop $old_container && docker rm -f $old_container
   docker-compose up -d --no-recreate --scale web=1
   docker-compose up -d

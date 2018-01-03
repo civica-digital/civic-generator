@@ -1,37 +1,43 @@
-# Rules
+# ----------------------------------------------------------------------
+#  Rules
+# ----------------------------------------------------------------------
 .DEFAULT_GOAL := help
 
-.PHONY: dev ci \
-	logs up down \
-	bundle prepare test \
-	analyze deploy build \
-	push provide update \
-	clean help
+.PHONY: ci bundle prepare test analyze clean \
+	deploy build push provide update \
+	dev up down logs decrypt shell \
+	help
 
-# Variables
-DEPLOY_ENV    := staging
-HOST          := localhost
-REPOSITORY    := civica-digital/$(shell basename $(shell pwd))
-TAG           := latest
-WORKSPACE     := .
-IMAGE         := $(REPOSITORY):$(TAG)
+# ----------------------------------------------------------------------
+#  Variables
+# ----------------------------------------------------------------------
+DEPLOY_ENV    ?= staging
+HOST          ?= localhost
+IMAGE         ?= $(REPOSITORY):$(TAG)
+REPOSITORY    ?= civica-digital/$(shell basename $(shell pwd))
+TAG           ?= latest
+WORKSPACE     ?= .
+
 SED           := sed
+OS            := $(shell uname -s)
+RELEASE_HASH  := $(shell git rev-parse --short HEAD)
+USER          := $(shell id -u):$(shell id -g)
+
+# Use Terraform in automation:
+# https://www.terraform.io/guides/running-terraform-in-automation.html
+TF_IN_AUTOMATION := true
 
 # Use a different sed version for MacOS users
-ifeq ($(shell uname -s), Darwin)
+ifeq ($(OS), Darwin)
 	SED := gsed
 endif
 
-# Targets
+# ----------------------------------------------------------------------
+#  Continuous Integration
+# ----------------------------------------------------------------------
 
-#: Setup your Docker development environment
-dev: files bundle prepare
-	@docker images --filter 'dangling=true' -q \
-		| xargs docker rmi -f 2> /dev/null; true
-	docker-compose up -d
-
-#: Run the CI strategy (prepare, test, analyze)
-ci: bundle prepare test analyze
+#: Run the CI strategy (bundle, prepare, test, analyze, clean)
+ci: bundle prepare test analyze clean
 
 #: Rebuild the image and install the gems
 bundle:
@@ -39,9 +45,13 @@ bundle:
 	@docker-compose down --remove-orphans 2> /dev/null; true
 	docker-compose run --rm --no-deps web bundle install
 
-#: Prepare the test environment and run migrations
-prepare: files
-	docker-compose run --rm web rake db:create test:prepare db:migrate db:seed
+#: Prepare the database (create, migrate, *seed)
+prepare:
+	docker-compose run --rm web rake db:create test:prepare db:migrate
+ifndef CI
+	# *Run seeds only if it's outside the CI environment (we don't need them)
+	docker-compose run --rm web rake db:seed
+endif
 
 #: Run the test suite
 test:
@@ -49,21 +59,37 @@ test:
 
 #: Run the static analysis suite
 analyze:
-	docker-compose run --rm --no-deps web rubocop
-	docker-compose run --rm --no-deps web rails_best_practices
-	docker-compose run --rm --no-deps web reek
-	docker-compose run --rm --no-deps -e CI=true web brakeman --no-progress -q -w3 -z
-	docker-compose run --rm --no-deps -e HOME=/tmp web bundle-audit check --update --ignore CVE-2017-5029
+	@echo "Rubocop:"
+	@docker-compose run --rm --no-deps web rubocop
+	@echo "Rails Best Practices:"
+	@docker-compose run --rm --no-deps web rails_best_practices; true
+	@echo "Reek:"
+	@docker-compose run --rm --no-deps web reek; true
+	@echo "Brakeman:"
+	@docker-compose run --rm --no-deps -e CI=true web brakeman --no-progress -q -w3 -z
+	@echo "Bundle Audit:"
+	@docker-compose run --rm --no-deps -e HOME=/tmp web bundle-audit check --update --ignore CVE-2017-5029
 
-#: Run the deploy strategy (build, push, provide, update)
-deploy: build push provide update
+#: Remove dangling images/containers and temporary files
+clean: down
+	@docker container prune --force
+	@docker image prune --force
+	@rm -rf tmp/*
+	@rm -rf log/*
+
+# ----------------------------------------------------------------------
+#  Continuous Delivery
+# ----------------------------------------------------------------------
+
+#: Run the deploy strategy (build, push, infra, provide, update)
+deploy: build push infrastructure provide update
 
 #: Build the staging/production Docker image
 build:
 	docker build \
 		--tag $(IMAGE) \
 		--pull=true $(WORKSPACE) \
-		--build-arg release_commit=$(shell git rev-parse HEAD)
+		--build-arg release_commit=$(RELEASE_HASH)
 ifeq ($(DEPLOY_ENV), "staging")
 	# Persist the image layers to speed the CI builds with cache
 	docker build --tag $(IMAGE) $(REPOSITORY):latest
@@ -71,43 +97,61 @@ endif
 
 #: Push the Docker image to the registry
 push:
-	@$(shell aws --profile docker ecr get-login --no-include-email)
+	@$(shell aws ecr get-login --no-include-email)
 	docker push $(IMAGE)
 
+#: Run Terraform for infrastructure change management
+infrastructure:
+	@echo "Terraform..."
+	@cd deploy/$(DEPLOY_ENV); \
+		terraform init -input=false; \
+		terraform plan -input=false -detailed-exitcode; \
+		status=$$?; \
+		if [ $$status = 2 ]; then \
+			terraform apply -input=false -auto-approve=true; \
+			echo "There will be a downtime of ~5 min while the infrastructure is ready..."; \
+			sleep 5m; \
+		fi
+
 #: Provide the HOST with the provisions/
-provide:
-	scp -r deploy/$(DEPLOY_ENV)/provisions $(HOST):/var/www/{{project_name}}
+provide: decrypt
+	rsync -avz -e \
+		"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
+		--progress \
+		deploy/$(DEPLOY_ENV)/provisions/ $(HOST):/var/www/{{project_name}}
 
 #: Update the HOST containers with the given Docker IMAGE
 update:
-	ssh -o StrictHostKeyChecking=no \
+	ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
 		$(HOST) bash -l -s < deploy/$(DEPLOY_ENV)/scripts/update-container.sh $(IMAGE)
 
-#: Remove dangling image
-clean:
-	@docker-compose down --remove-orphans
-	@docker rmi -f $(IMAGE); true
-	@docker images --filter 'dangling=true' -q | xargs docker rmi -f; true
+# ----------------------------------------------------------------------
+#  Development
+# ----------------------------------------------------------------------
+
+#: Setup your Docker development environment (bundle, prepare, clean, up)
+dev: docker-compose.override.yml bundle prepare clean up
 
 #: Start the containers with docker-compose in background
 up:
 	@docker-compose up -d
 
-#: Remove the containers in background
+#: Remove the containers running in background
 down:
-	@docker-compose down --remove-orphans
+	@docker-compose down --remove-orphans 2> /dev/null; true
 
 #: See the logs of the application container
 logs:
-	@docker-compose logs -f --tail 25 web
+	@docker-compose logs -f --tail 50 web
 
 #: Unlock the secrets using your GPG key
 decrypt:
 	@git-crypt unlock
 
-files: docker-compose.override.yml
-	mkdir -p tmp
-	mkdir -p log
+#: Open a bash session inside the web container
+shell:
+	@docker-compose exec web bash 2> /dev/null \
+		|| docker-compose run --rm web bash 2> /dev/null; true
 
 docker-compose.override.yml:
 	@echo "version: '3'"      >> docker-compose.override.yml
@@ -118,8 +162,8 @@ docker-compose.override.yml:
 	@echo "  web:"            >> docker-compose.override.yml
 	@echo "    ports:"        >> docker-compose.override.yml
 	@echo "      - 3000:3000" >> docker-compose.override.yml
-ifeq ($(shell uname -s), Linux)
-	@echo "    user: $(shell id -u):$(shell id -g)" >> docker-compose.override.yml
+ifeq ($(OS), Linux)
+	@echo "    user: $(USER)" >> docker-compose.override.yml
 endif
 
 #: Show information about the available targets

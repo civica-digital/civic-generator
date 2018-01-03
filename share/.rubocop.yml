@@ -135,6 +135,10 @@ Style/FrozenStringLiteralComment:
 Style/StringLiterals:
   EnforcedStyle: 'single_quotes'
 
+# We are Mexicanos
+Style/AsciiComments:
+  Enabled: false
+
 # If your code needs documentation is not simple enough.
 # Add documentation where it adds value.
 Style/Documentation:

@@ -8,6 +8,7 @@ def main
   set_environment_variables
   configure_postgres
   configure_timezone
+  configure_github
 
   web_stack           if yes?('> Web stack?', :green)
   devops_stack        if yes?('> DevOps stack?', :green)
@@ -58,7 +59,7 @@ def set_environment_variables
     SECRET_KEY_BASE=#{SecureRandom.hex(64)}
   CONFIG
 
-  create_file 'deploy/staging/provisions/.env', environment_variables
+  create_file 'deploy/staging/provisions/environment', environment_variables
 end
 
 def clean_gemfile
@@ -81,13 +82,19 @@ def configure_postgres
 
   remove_file 'config/database.yml.example'
   download 'config/database.yml'
-  append_to_file 'deploy/staging/provisions/.env', environment_variables
+  append_to_file 'deploy/staging/provisions/environment', environment_variables
 end
 
 def configure_timezone
   say 'Configuring Timezone...', :yellow
 
   environment 'config.time_zone = "Mexico City"'
+end
+
+def configure_github
+  say 'Configuring GitHub...', :yellow
+
+  download '.github/settings.yml'
 end
 
 def web_stack
@@ -148,7 +155,7 @@ def devops_stack
 
   environment timber_config_development, env: 'development'
   environment timber_config_production, env: 'production'
-  append_to_file 'deploy/staging/provisions/.env', environment_variables
+  append_to_file 'deploy/staging/provisions/environment', environment_variables
 
   docker
   jenkins
@@ -224,9 +231,11 @@ def file_upload_to_aws
   gem 'fog-aws'
 
   aws_bucket_config = <<~CONFIG
-    # Create AWS S3 bucket
-    resource "aws_s3_bucket" "storage" {
-      bucket = "${var.project_name}-file-storage"
+    # ----------------------------------------------------------------------
+    #  File storage (S3)
+    # ----------------------------------------------------------------------
+    resource "aws_s3_bucket" "file-storage" {
+      bucket = "${var.project_name}-staging"
       acl    = "private"
 
       tags {
@@ -238,10 +247,6 @@ def file_upload_to_aws
       }
     }
 
-  CONFIG
-
-  aws_s3_user = <<~CONFIG
-    # Create the S3 policy to access the project's bucket
     resource "aws_iam_user_policy" "s3" {
       name = "${var.project_name}-S3"
       user = "${aws_iam_user.project.name}"
@@ -254,8 +259,8 @@ def file_upload_to_aws
           "Effect": "Allow",
           "Action": "s3:*",
           "Resource": [
-            "${aws_s3_bucket.storage.arn}",
-            "${aws_s3_bucket.storage.arn}/*"
+            "${aws_s3_bucket.file-storage.arn}",
+            "${aws_s3_bucket.file-storage.arn}/*"
           ]
         }
       ]
@@ -268,7 +273,7 @@ def file_upload_to_aws
   bucket_output = <<~CONFIG
 
     output "bucket" {
-      value = "${aws_s3_bucket.storage.bucket}"
+      value = "${aws_s3_bucket.file-storage.bucket}"
     }
   CONFIG
 
@@ -277,17 +282,18 @@ def file_upload_to_aws
   CONFIG
 
   download 'config/initializers/carrierwave.rb'
-  insert_into_file 'deploy/staging/main.tf', aws_bucket_config, before: '# Data'
-  insert_into_file 'deploy/staging/main.tf', aws_s3_user, before: '# Data'
+  insert_into_file 'deploy/staging/main.tf', aws_bucket_config, before: '# Output'
   append_to_file 'deploy/staging/main.tf', bucket_output
-  append_to_file 'deploy/staging/provisions/.env', environment_variables
+  append_to_file 'deploy/staging/provisions/environment', environment_variables
 end
 
 def setup_aws_ses
   gem 'aws-ses', require: 'aws/ses'
 
   ses_policy = <<~CONFIG
-    # Create the SES policy to send emails
+    # ----------------------------------------------------------------------
+    #  Email provider (SES)
+    # ----------------------------------------------------------------------
     resource "aws_iam_user_policy" "ses" {
       name = "${var.project_name}-SES"
       user = "${aws_iam_user.project.name}"
@@ -309,18 +315,16 @@ def setup_aws_ses
   CONFIG
 
   environment_variables = <<~CONFIG
-    AWS_SES_ACCESS_KEY=changeme
-    AWS_SES_EMAIL_FROM=noreply+#{@app_name}@civica.digital
-    AWS_SES_SECRET_KEY=changeme
+    EMAIL_FROM=noreply+#{@app_name}@civica.digital
   CONFIG
 
   mailer_config = "  config.mailer_sender = ENV.fetch('EMAIL_FROM') { 'noreply@civica.digital' }"
 
   download 'config/initializers/mailer.rb'
   environment 'config.action_mailer.delivery_method = :ses', env: 'production'
-  insert_into_file 'deploy/staging/main.tf', ses_policy, before: '# Data'
+  insert_into_file 'deploy/staging/main.tf', ses_policy, before: '# Output'
   insert_into_file 'config/initializers/devise.rb', mailer_config, before: '  # ==> ORM configuration'
-  append_to_file 'deploy/staging/provisions/.env', environment_variables
+  append_to_file 'deploy/staging/provisions/environment', environment_variables
 end
 
 def setup_recaptcha
@@ -391,9 +395,7 @@ def configure_git_crypt
   team_members.each { |user| `git-crypt add-gpg-user --trusted #{user[0..2]}` }
 
   gitattributes = <<~CONF
-    secretfile filter=git-crypt diff=git-crypt
-    .env filter=git-crypt diff=git-crypt
-    *.secret
+    **/provisions/** filter=git-crypt diff=git-crypt
   CONF
 
   create_file '.gitattributes', gitattributes

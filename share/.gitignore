@@ -42,3 +42,6 @@
 # Deploy
 /deploy/**/.terraform/*
 /deploy/**/terraform*
+
+# Respect the dot keep
+!.keep

@@ -16,7 +16,7 @@ services:
     depends_on:
       - db
     env_file:
-      - ./.env
+      - ./environment
     labels:
       - "traefik.backend={{project_name}}-web"
       - "traefik.frontend.rule=Host:{{project_name}}.civicadesarrolla.me"

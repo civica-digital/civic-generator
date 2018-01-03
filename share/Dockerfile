@@ -1,9 +1,9 @@
 FROM ruby:2.4.2-alpine
 
 # Runtime
-ENV APP_HOME=/usr/src/app \
+ENV APP_HOME=/usr/src \
     LANG=C.UTF-8 \
-    PAGER='busybox less' \
+    PATH=/usr/src/bin:$PATH \
     TERM='xterm-256color' \
     RAILS_ENV=production
 
@@ -19,10 +19,12 @@ RUN set -ex \
     && apk update \
     && apk upgrade \
     && apk add --no-cache --virtual .runtime \
-      tzdata \
-      postgresql-dev \
+      bash \
+      imagemagick \
+      less \
       nodejs \
-      bash
+      postgresql-dev \
+      tzdata
 
 # Build
 COPY Gemfile* $APP_HOME/

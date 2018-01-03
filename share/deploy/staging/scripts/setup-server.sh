@@ -8,9 +8,11 @@
 # password for it, as many commands requires root access and runs in
 # a non-interactive environment.
 
+# As we are running this with Terraform, it interprets the $ { var }
+# as interpolation, that's why we are using the $var syntax
 username=${USERNAME}
-aws_ecr_access_key=${AWS_ECR_ACCESS_KEY}
-aws_ecr_secret_key=${AWS_ECR_SECRET_KEY}
+aws_access_key=${AWS_ACCESS_KEY}
+aws_secret_key=${AWS_SECRET_KEY}
 project_name=${PROJECT_NAME}
 app_dir="/var/www/$project_name"
 
@@ -79,14 +81,20 @@ install_docker() {
 configure_docker() {
   # Add user to the Docker group and specify some useful functions
   gpasswd -a $username docker
-  echo "export COMPOSE_FILE=$app_dir/docker-compose.yml" >> /home/$username/.profile
-  echo "alias dc=docker-compose" >> /home/$username/.profile
-  echo "rails() { dc exec web rails \$@ ; }" >> /home/$username/.profile
-  echo "rake() { dc exec web rake \$@ ; }" >> /home/$username/.profile
+
+  cat <<EOF>> /home/$username/.profile
+
+export COMPOSE_FILE=/var/www/{{project_name}}/docker-compose.yml
+alias dc=docker-compose
+alias web-index="dc ps | grep -Eio 'web_[0-9]+' | grep -Eo '[0-9]+'"
+shell() { dc exec --index=\$(web-index) web bash ; }
+rails() { dc exec --index=\$(web-index) web rails \$@ ; }
+rake() { dc exec --index=\$(web-index) web rake \$@ ; }
+EOF
 }
 
 install_docker_compose() {
-  sudo curl -L https://github.com/docker/compose/releases/download/1.16.0/docker-compose-`uname -s`-`uname -m` -o docker-compose
+  sudo curl -L https://github.com/docker/compose/releases/download/1.18.0/docker-compose-`uname -s`-`uname -m` -o docker-compose
   sudo mv docker-compose /usr/local/bin/
   sudo chmod +x /usr/local/bin/docker-compose
 }
@@ -96,11 +104,8 @@ configure_docker_compose() {
   sudo mv /opt/docker-compose.yml $app_dir/
   sudo mv /opt/traefik.toml $app_dir/
 
-  # Add an empty environment file and acme.json (for Traefik)
-  touch $app_dir/.env
+  # Create an acme.json for Traefik SSL
   touch $app_dir/acme.json
-
-  # Close some permissions for acme.json
   sudo chmod 600 $app_dir/acme.json
 
   sudo chown -R $username:$username $app_dir
@@ -117,21 +122,21 @@ install_awscli() {
 }
 
 configure_awscli() {
-  # Add the Docker profile to the user with ECR credentials
+  # Add the default profile to the user
   local aws_dir="/home/$username/.aws"
 
   mkdir -p $aws_dir
 
   cat <<EOF > $aws_dir/config
-[docker]
+[default]
 output = json
 region = us-east-1
 EOF
 
   cat <<EOF > $aws_dir/credentials
-[docker]
-aws_access_key_id = $aws_ecr_access_key
-aws_secret_access_key = $aws_ecr_secret_key
+[default]
+aws_access_key_id = $aws_access_key
+aws_secret_access_key = $aws_secret_key
 EOF
 
   chmod 600 $aws_dir/*

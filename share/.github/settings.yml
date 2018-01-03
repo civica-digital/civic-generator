@@ -1,0 +1,45 @@
+# These settings are synced to GitHub by https://probot.github.io/apps/settings/
+
+repository:
+  name: {{project_name}}
+  homepage: https://{{project_name}}.civicadesarrolla.me/
+  private: true
+  has_issues: true
+  has_projects: true
+  has_wiki: false
+  default_branch: master
+  allow_squash_merge: true
+  allow_merge_commit: false
+  allow_rebase_merge: false
+
+labels:
+  - name: bug
+    color: ee0701
+  - name: ui
+    color: d93f0b
+  - name: frontend
+    color: 0052cc
+  - name: backend
+    color: 7e4be5
+  - name: devops
+    color: 333333
+  - name: 1-point
+    color: bfd4f2
+  - name: 2-points
+    color: d4c5f9
+  - name: 4-points
+    color: c2e0c6
+  - name: 6-points
+    color: fef2c0
+  - name: 8-points
+    color: e99695
+
+teams:
+  - name: devops
+    permission: admin
+  - name: design
+    permission: push
+  - name: dev
+    permission: push
+  - name: product
+    permission: read

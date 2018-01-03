@@ -1,5 +1,11 @@
 pipeline {
   agent any
+
+  options {
+    disableConcurrentBuilds()
+    buildDiscarder(logRotator(numToKeepStr: '50'))
+  }
+
   environment {
     CI = "true"
     DEPLOY_ENV = "staging"
@@ -7,39 +13,50 @@ pipeline {
     TAG = "v_${env.BUILD_NUMBER}"
     HOST = "deploy@{{project_name}}.civicadesarrolla.me"
     COMPOSE_PROJECT_NAME = "{{project_name}}"
+    TF_VAR_digital_ocean_token = credentials('digital-ocean-token')
+    AUTHOR_NAME = sh(returnStdout: true, script: 'git log --format="%an" | head -1').trim()
+    SHORT_COMMIT = sh(returnStdout: true, script: 'echo ${GIT_COMMIT:0:7}').trim()
+    GITHUB_REPOSITORY = sh(returnStdout: true, script: 'echo ${GIT_URL:0:-4}').trim()
   }
+
   stages {
-    stage('Bundle') {
-      steps {
-        sh 'make bundle'
-      }
-    }
-    stage('Prepare') {
-      steps {
-        sh 'make prepare'
-      }
-    }
-    stage('Test') {
-      steps {
-        sh 'make test'
-      }
-    }
+    stage('Bundle') { steps { sh 'make bundle' } }
+
+    stage('Prepare') { steps { sh 'make prepare' } }
+
+    stage('Test') { steps { sh 'make test' } }
+
+    stage('Analyze') { steps { sh 'make analyze' } }
+
     stage('Deploy') {
-      when {
-        branch 'master'
-      }
+      when { branch 'master' }
+
       steps {
-        sh 'make deploy'
-      }
-    }
-    stage('Clean') {
-      steps {
-        sh 'make clean'
+        sshagent(['civica-ci-ssh']) {
+          sh 'make deploy'
+        }
       }
     }
   }
+
   post {
+    success {
+      slackSend(
+        color: 'good',
+        message: ":+1: <${env.RUN_DISPLAY_URL}|${env.JOB_NAME} [${env.BUILD_NUMBER}]>  *-*  <${GITHUB_REPOSITORY}/commit/${SHORT_COMMIT}|${SHORT_COMMIT}>  (_${AUTHOR_NAME}_)"
+      )
+    }
+
+    failure {
+      slackSend(
+        color: 'danger',
+        message: ":-1: <${env.RUN_DISPLAY_URL}|${env.JOB_NAME} [${env.BUILD_NUMBER}]>  *-*  <${GITHUB_REPOSITORY}/commit/${SHORT_COMMIT}|${SHORT_COMMIT}>  (_${AUTHOR_NAME}_)"
+      )
+    }
+
     always {
+      echo 'Cleaning...'
+      sh 'make clean'
       deleteDir()
     }
   }

@@ -31,3 +31,6 @@ public/uploads/
 Makefile
 Jenkinsfile
 tags
+
+# Respect the dot keep
+!.keep

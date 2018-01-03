@@ -18,7 +18,7 @@ services:
     depends_on:
       - db
     volumes:
-      - .:/usr/src/app
+      - .:/usr/src
       - gems:/usr/local/bundle
     environment:
       - DATABASE_HOST=db

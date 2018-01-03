@@ -8,4 +8,5 @@ end
 
 RSpec.configure do |config|
   config.include ApiHelper, type: :request
+  config.include ApiHelper, type: :controller
 end
