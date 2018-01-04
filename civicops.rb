@@ -183,11 +183,11 @@ def code_analysis_stack
 end
 
 def tests_stack
-  say 'Setting up RSpec and Factory Girl...', :yellow
+  say 'Setting up RSpec and Factory Bot...', :yellow
 
   gem_group :development, :test do
     gem 'dotenv-rails'
-    gem 'factory_girl_rails'
+    gem 'factory_bot_rails'
     gem 'pry-rails'
     gem 'rspec-rails'
   end
@@ -195,8 +195,8 @@ def tests_stack
   say 'Use `json_body` to access the response body in tests.', :yellow
   download 'spec/support/api_helper.rb'
 
-  say 'Use the FactoryGirl methods without the namespace.', :yellow
-  download 'spec/support/factory_girl.rb'
+  say 'Use the FactoryBot methods without the namespace.', :yellow
+  download 'spec/support/factory_bot.rb'
 end
 
 def docker
