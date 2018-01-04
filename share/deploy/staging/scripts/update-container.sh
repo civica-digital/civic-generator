@@ -35,7 +35,7 @@ recreate_services() {
 }
 
 run_migrations() {
-  docker-compose run --rm web rake db:create db:migrate
+  docker-compose run --rm web sh -c 'bin/wait_for_postgresql && rake db:create db:migrate'
 }
 
 clean() {
