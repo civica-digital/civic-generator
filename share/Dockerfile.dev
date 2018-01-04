@@ -33,4 +33,11 @@ RUN set -ex \
       build-base \
       git
 
+# Usability
+ENV INPUTRC=/etc/inputrc
+
+RUN set -ex \
+  && echo '"\e[1;5C": forward-word' >> /etc/inputrc \
+  && echo '"\e[1;5D": backward-word' >> /etc/inputrc
+
 # vim: ft=dockerfile
