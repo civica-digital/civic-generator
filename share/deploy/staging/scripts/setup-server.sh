@@ -84,7 +84,7 @@ configure_docker() {
 
   cat <<EOF>> /home/$username/.profile
 
-export COMPOSE_FILE=/var/www/{{project_name}}/docker-compose.yml
+export COMPOSE_FILE=$app_dir/docker-compose.yml
 alias dc=docker-compose
 alias web-index="dc ps | grep -Eio 'web_[0-9]+' | grep -Eo '[0-9]+'"
 shell() { dc exec --index=\$(web-index) web bash ; }

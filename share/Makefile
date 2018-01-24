@@ -11,6 +11,7 @@
 # ----------------------------------------------------------------------
 #  Variables
 # ----------------------------------------------------------------------
+APP_DIR       ?= /var/www/{{project_name}}
 DEPLOY_ENV    ?= staging
 HOST          ?= localhost
 IMAGE         ?= $(REPOSITORY):$(TAG)
@@ -118,7 +119,7 @@ provide: decrypt
 	rsync -avz -e \
 		"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
 		--progress \
-		deploy/$(DEPLOY_ENV)/provisions/ $(HOST):/var/www/{{project_name}}
+		deploy/$(DEPLOY_ENV)/provisions/ $(HOST):$(APP_DIR)
 
 #: Update the HOST containers with the given Docker IMAGE
 update:
@@ -146,7 +147,10 @@ logs:
 
 #: Unlock the secrets using your GPG key
 decrypt:
-	@git-crypt unlock
+	@echo "Decryptying..."
+	@git commit --all --allow-empty -m 'tmp' &> /dev/null
+	@git-crypt unlock; true
+	@git reset HEAD~1 &> /dev/null
 
 #: Open a bash session inside the web container
 shell:
