@@ -17,7 +17,6 @@ NotUseTimeAgoInWordsCheck: { }
 OveruseRouteCustomizationsCheck: { customize_count: 2 }
 ProtectMassAssignmentCheck: { }
 RemoveEmptyHelpersCheck: { }
-ReplaceInstanceVariableWithLocalVariableCheck: { }
 SimplifyRenderInControllersCheck: { }
 SimplifyRenderInViewsCheck: { }
 UseModelAssociationCheck: { }
