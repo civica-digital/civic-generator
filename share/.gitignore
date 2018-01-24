@@ -10,6 +10,7 @@
 
 # Web
 /node_modules/
+/.npm/
 /public/assets/
 /yarn-error.log
 
