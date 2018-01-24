@@ -13,6 +13,12 @@ repository:
   allow_rebase_merge: false
 
 labels:
+  - name: feature
+    color: 16bf62
+  - name: needs-specs
+    color: c4ed65
+  - name: dev
+    color: 097484
   - name: bug
     color: ee0701
   - name: ui
