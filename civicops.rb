@@ -321,13 +321,16 @@ def setup_aws_ses
     EMAIL_FROM=noreply+#{@app_name}@civica.digital
   CONFIG
 
-  mailer_config = "  config.mailer_sender = ENV.fetch('EMAIL_FROM') { 'noreply@civica.digital' }"
+  mail = "ENV.fetch('EMAIL_FROM') { 'noreply@civica.digital' }"
+  application_mailer = "  default from: #{mail}"
+  mailer_config = "  config.mailer_sender = #{mail}"
 
   download 'config/initializers/mailer.rb'
   environment 'config.action_mailer.delivery_method = :ses', env: 'production'
   insert_into_file 'deploy/staging/main.tf', ses_policy, before: '# Output'
   insert_into_file 'config/initializers/devise.rb', mailer_config, before: '  # ==> ORM configuration'
   append_to_file 'deploy/staging/provisions/environment', environment_variables
+  append_to_file 'app/mailers/application_mailer.rb', application_mailer, after: 'layout "mailer"'
 end
 
 def setup_recaptcha
