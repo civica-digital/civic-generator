@@ -81,6 +81,7 @@ def configure_postgres
 
   remove_file 'config/database.yml.example'
   download 'config/database.yml'
+  download 'bin/wait_for_postgresql'
   append_to_file 'deploy/staging/provisions/environment', environment_variables
 end
 
@@ -107,7 +108,10 @@ def web_stack
 
   gem_group :development do
     gem 'better_errors'
+    gem 'binding_of_caller'
   end
+
+  download 'config/initializers/better_errors.rb'
 end
 
 def devops_stack
