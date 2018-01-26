@@ -148,16 +148,22 @@ def devops_stack
     config.logger = ActiveSupport::TaggedLogging.new(logger)
   CONFIG
 
+  full_errors_optional = <<~CONFIG
+    config.consider_all_requests_local = ENV.fetch('FULL_ERROR_REPORTS') { false }
+  CONFIG
+
   environment_variables = <<~CONFIG
     NEW_RELIC_ENV=staging
     NEW_RELIC_LICENSE_KEY=changeme
     ROLLBAR_ACCESS_TOKEN=changeme
     ROLLBAR_ENV=staging
     TIMBER_API_KEY=changeme
+    FULL_ERROR_REPORTS=true
   CONFIG
 
   environment timber_config_development, env: 'development'
   environment timber_config_production, env: 'production'
+  environment full_errors_optional, env: 'production'
   append_to_file 'deploy/staging/provisions/environment', environment_variables
 
   docker
