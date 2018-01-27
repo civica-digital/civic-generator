@@ -5,7 +5,8 @@
 
 .PHONY: ci bundle prepare test analyze clean \
 	deploy build push provide update \
-	dev up down logs decrypt shell \
+	dev up down logs decrypt shell fresh \
+	db-clear \
 	help
 
 # ----------------------------------------------------------------------
@@ -15,7 +16,7 @@ APP_DIR       ?= /var/www/{{project_name}}
 DEPLOY_ENV    ?= staging
 HOST          ?= localhost
 IMAGE         ?= $(REPOSITORY):$(TAG)
-REPOSITORY    ?= civica-digital/$(shell basename $(shell pwd))
+REPOSITORY    ?= civica-digital/$(DIRNAME)
 TAG           ?= latest
 WORKSPACE     ?= .
 
@@ -23,10 +24,14 @@ SED           := sed
 OS            := $(shell uname -s)
 RELEASE_HASH  := $(shell git rev-parse --short HEAD)
 USER          := $(shell id -u):$(shell id -g)
+DIRNAME       := $(shell basename $(shell pwd))
 
 # Use Terraform in automation:
 # https://www.terraform.io/guides/running-terraform-in-automation.html
 TF_IN_AUTOMATION := true
+
+# Defaults to working directory
+COMPOSE_PROJECT_NAME ?= $(DIRNAME)
 
 # Use a different sed version for MacOS users
 ifeq ($(OS), Darwin)
@@ -156,6 +161,13 @@ decrypt:
 shell:
 	@docker-compose exec web bash 2> /dev/null \
 		|| docker-compose run --rm web bash 2> /dev/null; true
+
+#: Database: Remove all the data
+db-clear:
+	@docker volume rm $(COMPOSE_PROJECT_NAME)_db_data
+
+#: Performs a fresh start (down, db-clear, dev)
+fresh: down db-clear dev
 
 docker-compose.override.yml:
 	@echo "version: '3'"      >> docker-compose.override.yml

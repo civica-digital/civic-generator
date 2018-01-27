@@ -378,6 +378,12 @@ YML
   insert_into_file 'deploy/staging/provisions/docker-compose.yml', redis_volume, after: db_volume
   insert_into_file 'deploy/staging/provisions/docker-compose.yml', redis_service, after: 'services:'
   append_to_file 'deploy/staging/provisions/docker-compose.yml', sidekiq_service
+
+  environment_variables = <<~CONFIG
+    REDIS_URL=redis://redis:6379
+  CONFIG
+
+  append_to_file 'deploy/staging/provisions/environment', environment_variables
 end
 
 def download(file, &block)
