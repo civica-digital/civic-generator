@@ -1,5 +1,5 @@
 Rollbar.configure do |config|
-  unless Rails.env.production?
+  unless Rails.env.production? && ENV['ROLLBAR_ACCESS_TOKEN']
     config.enabled = false
   end
 
