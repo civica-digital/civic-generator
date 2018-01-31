@@ -140,7 +140,7 @@ def devops_stack
     if ENV['TIMBER_API_KEY'].present?
       log_device = Timber::LogDevices::HTTP.new(ENV['TIMBER_API_KEY'])
     else
-      log_devise = STDOUT
+      log_device = STDOUT
     end
 
     logger = Timber::Logger.new(log_device)
