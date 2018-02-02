@@ -97,10 +97,8 @@ build:
 		--tag $(IMAGE) \
 		--pull=true $(WORKSPACE) \
 		--build-arg release_commit=$(RELEASE_HASH)
-ifeq ($(DEPLOY_ENV), staging)
 	# Persist the image layers to speed the CI builds with cache
 	docker tag $(IMAGE) $(REPOSITORY):latest
-endif
 
 #: Push the Docker image to the registry
 push:
