@@ -79,6 +79,7 @@ analyze:
 #: Remove dangling images/containers and temporary files
 clean: down
 	@docker container prune --force
+	@docker rmi --force $(IMAGE); true
 	@docker image prune --force
 	@rm -rf tmp/*
 	@rm -rf log/*
@@ -96,9 +97,9 @@ build:
 		--tag $(IMAGE) \
 		--pull=true $(WORKSPACE) \
 		--build-arg release_commit=$(RELEASE_HASH)
-ifeq ($(DEPLOY_ENV), "staging")
+ifeq ($(DEPLOY_ENV), staging)
 	# Persist the image layers to speed the CI builds with cache
-	docker build --tag $(IMAGE) $(REPOSITORY):latest
+	docker tag $(IMAGE) $(REPOSITORY):latest
 endif
 
 #: Push the Docker image to the registry
