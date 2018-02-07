@@ -115,6 +115,7 @@ def web_stack
 end
 
 def devops_stack
+  gem 'commit_hash'
   gem 'health_check'
   gem 'newrelic_rpm'
   gem 'rollbar'
