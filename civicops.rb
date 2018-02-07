@@ -347,6 +347,7 @@ def setup_recaptcha
 end
 
 def setup_sidekiq
+  gem 'redis'
   gem 'sidekiq'
 
   db_volume = '  db_data: {}'
