@@ -11,8 +11,6 @@
 # As we are running this with Terraform, it interprets the $ { var }
 # as interpolation, that's why we are using the $var syntax
 username=${USERNAME}
-aws_access_key=${AWS_ACCESS_KEY}
-aws_secret_key=${AWS_SECRET_KEY}
 project_name=${PROJECT_NAME}
 app_dir="/var/www/$project_name"
 
@@ -30,14 +28,12 @@ main() {
 }
 
 create_user() {
-  # Creates a user (by default, named `deploy`)
-  # copies the SSH keys from root, and allows using
-  # sudo without typing a password (useful for automated scripts)
+  # Creates a user (by default, named `deploy`), and
+  # copies the SSH keys from root
   useradd --create-home --shell /bin/bash $username
   gpasswd -a $username sudo
   cp -R ~/.ssh /home/$username/
   chown -R $username:$username /home/$username/.ssh
-  echo "$username ALL=NOPASSWD:ALL" >> /etc/sudoers
 }
 
 make_app_dir() {
@@ -48,8 +44,18 @@ make_app_dir() {
 }
 
 configure_ssh() {
+  echo -e "\n# Security settings" | sudo tee --append /etc/ssh/ssh_config
+
   # Disallow login with the `root` user through SSH
-  sed -i 's/RootLogin yes/RootLogin no/' /etc/ssh/sshd_config
+  echo 'PermitRootLogin no' | sudo tee --append /etc/ssh/sshd_config
+
+  # Password based logins are disabled - only public key based logins are allowed.
+  echo 'AuthenticationMethods publickey' | sudo tee --append /etc/ssh/sshd_config
+
+  # LogLevel VERBOSE logs user's key fingerprint on login.
+  # Needed to have a clear audit track of which key was using to log in.
+  echo 'LogLevel VERBOSE' | sudo tee --append /etc/ssh/ssh_config
+
   systemctl restart ssh
 }
 
