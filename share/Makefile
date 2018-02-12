@@ -24,7 +24,7 @@ SED           := sed
 OS            := $(shell uname -s)
 RELEASE_HASH  := $(shell git rev-parse --short HEAD)
 USER          := $(shell id -u):$(shell id -g)
-DIRNAME       := $(shell basename $(shell pwd))
+DIRNAME       := $(shell basename $(shell pwd) | tr -d '[:punct:]')
 
 # Use Terraform in automation:
 # https://www.terraform.io/guides/running-terraform-in-automation.html
