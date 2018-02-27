@@ -81,7 +81,6 @@ def configure_postgres
 
   remove_file 'config/database.yml.example'
   download 'config/database.yml'
-  download 'bin/wait_for_postgresql'
   append_to_file 'deploy/staging/provisions/environment', environment_variables
 end
 
@@ -116,6 +115,7 @@ end
 
 def devops_stack
   gem 'commit_hash'
+  gem 'wait_pg'
   gem 'health_check'
   gem 'newrelic_rpm'
   gem 'rollbar'
