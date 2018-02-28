@@ -100,16 +100,12 @@ EOF
 }
 
 install_docker_compose() {
-  sudo curl -L https://github.com/docker/compose/releases/download/1.18.0/docker-compose-`uname -s`-`uname -m` -o docker-compose
+  sudo curl -L https://github.com/docker/compose/releases/download/1.19.0/docker-compose-`uname -s`-`uname -m` -o docker-compose
   sudo mv docker-compose /usr/local/bin/
   sudo chmod +x /usr/local/bin/docker-compose
 }
 
 configure_docker_compose() {
-  # Move the previously created docker-compose and traefik config
-  sudo mv /opt/docker-compose.yml $app_dir/
-  sudo mv /opt/traefik.toml $app_dir/
-
   # Create an acme.json for Traefik SSL
   touch $app_dir/acme.json
   sudo chmod 600 $app_dir/acme.json

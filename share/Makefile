@@ -53,7 +53,7 @@ bundle:
 
 #: Prepare the database (create, migrate, *seed)
 prepare:
-	docker-compose run --rm web sh -c 'bin/wait_for_postgresql && rake db:create test:prepare db:migrate'
+	docker-compose run --rm web sh -c 'wait_pg && rake db:create test:prepare db:migrate'
 ifndef CI
 	# *Run seeds only if it's outside the CI environment (we don't need them)
 	docker-compose run --rm web rake db:seed
