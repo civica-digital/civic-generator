@@ -145,6 +145,10 @@ up:
 down:
 	@docker-compose down --remove-orphans 2> /dev/null; true
 
+#: Restart the web application only
+restart:
+	@docker-compose restart web
+
 #: See the logs of the application container
 logs:
 	@docker-compose logs -f --tail 50 web

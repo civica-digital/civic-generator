@@ -17,9 +17,8 @@ test:
   database: {{project_name}}_test
 
 production:
-  adapter: postgresql
   pool: 5
   timeout: 5000
   reconnect: true
   connect_timeout: 60
-  database_url: <%= ENV.fetch('DATABASE_URL') { '' } %>
+  url: <%= ENV.fetch('DATABASE_URL') { '' } %>
