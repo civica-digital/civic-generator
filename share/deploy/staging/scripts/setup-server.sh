@@ -44,7 +44,7 @@ make_app_dir() {
 }
 
 configure_ssh() {
-  echo -e "\n# Security settings" | sudo tee --append /etc/ssh/ssh_config
+  echo -e "\n# Security settings" | sudo tee --append /etc/ssh/sshd_config
 
   # Disallow login with the `root` user through SSH
   echo 'PermitRootLogin no' | sudo tee --append /etc/ssh/sshd_config
@@ -54,9 +54,9 @@ configure_ssh() {
 
   # LogLevel VERBOSE logs user's key fingerprint on login.
   # Needed to have a clear audit track of which key was using to log in.
-  echo 'LogLevel VERBOSE' | sudo tee --append /etc/ssh/ssh_config
+  echo 'LogLevel VERBOSE' | sudo tee --append /etc/ssh/sshd_config
 
-  systemctl restart ssh
+  systemctl restart sshd
 }
 
 install_docker() {
